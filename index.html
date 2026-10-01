@@ -2,8 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Mania | Encrypted E-Commerce Gateway</title>
+  
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Mania">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#090d16">
+
+  <link rel="manifest" href="data:application/manifest+json,{
+    %22name%22:%22Mania%20Marketplace%22,
+    %22short_name%22:%22Mania%22,
+    %22start_url%22:%22.%22,
+    %22display%22:%22standalone%22,
+    %22background_color%22:%22%23090d16%22,
+    %22theme_color%22:%22%23090d16%22
+  }">
+
   <style>
     :root {
       --bg: #090d16;
@@ -28,7 +44,7 @@
     
     .nav-btn { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
     .nav-btn.active { border-color: var(--blue); background: rgba(37, 99, 235, 0.2); }
-    .nav-btn-admin { border-color: var(--purple); color: #c084fc; }
+    .nav-btn-admin { border-color: var(--purple); color: #c084fc; display: none; }
 
     .main-layout { display: grid; grid-template-columns: 240px 1fr; gap: 16px; width: 100%; max-width: 1000px; }
     @media (max-width: 768px) { .main-layout { grid-template-columns: 1fr; } }
@@ -43,7 +59,6 @@
 
     .search-bar { width: 100%; background: #0a0e17; border: 1px solid var(--border); border-radius: 8px; padding: 10px; color: var(--text); font-size: 0.85rem; margin-bottom: 16px; outline: none; }
 
-    /* MARKETPLACE PRODUCT GRID */
     .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
     .product-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; }
     .product-img { width: 100%; height: 110px; background: #0a0e17; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 0.75rem; margin-bottom: 10px; border: 1px dashed var(--border); text-align: center; padding: 6px; }
@@ -52,7 +67,6 @@
     .product-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
     .price-tag { font-size: 0.85rem; font-weight: 800; color: var(--green); }
 
-    /* BUTTONS & FORMS */
     .btn { background: var(--blue); color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.75rem; }
     .btn:hover { background: #1d4ed8; }
     .btn-green { background: var(--green); }
@@ -70,14 +84,8 @@
     label { display: block; font-size: 0.7rem; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; font-weight: 700; }
     input, select, textarea { width: 100%; background: #0a0e17; border: 1px solid var(--border); border-radius: 8px; padding: 10px; color: var(--text); font-size: 0.85rem; outline: none; }
 
-    /* PIPELINE DIAGRAM */
-    .pipeline-box { background: #060911; border: 1px dashed var(--border); border-radius: 8px; padding: 10px; margin: 10px 0; text-align: left; font-size: 0.7rem; font-family: monospace; }
-    .hop-item { background: #111827; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px; border-left: 3px solid var(--blue); }
-
-    /* MODAL */
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; padding: 16px; z-index: 100; overflow-y: auto; }
     .modal-content { background: var(--card); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 500px; padding: 20px; text-align: left; }
-    .qr-box { background: #fff; padding: 10px; border-radius: 8px; display: inline-block; margin: 10px 0; }
   </style>
 </head>
 <body>
@@ -87,39 +95,37 @@
     <div class="header-actions">
       <button id="btnNavMarket" class="nav-btn active" onclick="switchView('market')">🛒 Market</button>
       <button id="btnNavWallet" class="nav-btn" onclick="switchView('wallet')">💳 Wallet</button>
-      <button id="btnNavAdmin" class="nav-btn nav-btn-admin" onclick="switchView('admin')">⚙️ Admin</button>
+      <button id="btnNavAdmin" class="nav-btn nav-btn-admin" style="display: none;" onclick="switchView('admin')">⚙️ Admin</button>
       <button class="nav-btn" style="border-color: var(--green);" onclick="openCart()">🛍️ Cart (<span id="cartCount">0</span>)</button>
     </div>
   </div>
 
   <div class="main-layout">
-    <!-- SIDEBAR CATEGORIES -->
     <div class="sidebar">
       <h3>Categories</h3>
-      <ul class="cat-list" id="categorySidebar">
-        <!-- Rendered dynamically -->
-      </ul>
+      <ul class="cat-list" id="categorySidebar"></ul>
 
       <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border);">
         <h3>Wallet Balance</h3>
         <p style="font-size: 0.75rem; color: var(--muted);">BTC: <strong id="sideBtc" style="color:#fff;">0.050000</strong></p>
         <p style="font-size: 0.75rem; color: var(--muted); margin-top: 4px;">XMR: <strong id="sideXmr" style="color:#fff;">5.2500</strong></p>
       </div>
+
+      <div style="margin-top: 24px; padding-top: 12px; border-top: 1px dashed var(--border); text-align: center;">
+        <button id="btnAdminTrigger" class="btn" style="background: transparent; color: var(--muted); font-size: 0.7rem; border: 1px dashed var(--border); width: 100%;" onclick="openAdminAuthModal()">🔑 Admin Login</button>
+      </div>
     </div>
 
-    <!-- MAIN CONTENT AREA -->
     <div class="content-area">
-      
-      <!-- VIEW 1: MARKETPLACE -->
+      <!-- MARKET VIEW -->
       <div id="viewMarket">
         <input type="text" class="search-bar" id="searchInput" onkeyup="filterProducts()" placeholder="Search product listings, categories, or vendor names...">
-        <div class="product-grid" id="productGrid">
-          <!-- Rendered dynamically -->
-        </div>
+        <div class="product-grid" id="productGrid"></div>
       </div>
 
-      <!-- VIEW 2: WALLET & FAUCET -->
+      <!-- WALLET VIEW -->
       <div id="viewWallet" style="display: none;">
+        <!-- BITCOIN -->
         <div class="wallet-card" style="border-color: rgba(247, 147, 26, 0.4);">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <span style="color:var(--btc); font-weight:800; font-size:0.85rem;">BITCOIN (BTC)</span>
@@ -133,6 +139,7 @@
           </div>
         </div>
 
+        <!-- MONERO -->
         <div class="wallet-card" style="border-color: rgba(255, 102, 0, 0.4);">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <span style="color:var(--xmr); font-weight:800; font-size:0.85rem;">MONERO (XMR)</span>
@@ -145,23 +152,45 @@
             <button class="btn" style="background:var(--xmr);" onclick="addDeposit('XMR')">+ Add Test Funds</button>
           </div>
         </div>
+
+        <!-- WITHDRAWAL SECTION -->
+        <div class="wallet-card" style="border-color: var(--blue);">
+          <h3 style="font-size: 0.9rem; margin-bottom: 12px; color: var(--blue);">📤 Withdraw Crypto</h3>
+          <div class="form-group">
+            <label>Select Cryptocurrency</label>
+            <select id="withdrawCoin">
+              <option value="BTC">Bitcoin (BTC)</option>
+              <option value="XMR">Monero (XMR)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Destination Wallet Address</label>
+            <input type="text" id="withdrawWalletId" placeholder="Enter recipient BTC or XMR wallet address">
+          </div>
+          <div class="form-group">
+            <label>Amount to Withdraw</label>
+            <input type="number" id="withdrawAmt" step="0.0001" placeholder="0.0000">
+          </div>
+          <button class="btn btn-green" style="width: 100%; padding: 10px;" onclick="processWithdrawal()">Execute Withdrawal</button>
+        </div>
       </div>
 
-      <!-- VIEW 3: ADMIN PANEL -->
+      <!-- ADMIN VIEW -->
       <div id="viewAdmin" style="display: none;">
-        <!-- CATEGORY MANAGEMENT -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; background: rgba(139, 92, 246, 0.1); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--purple);">
+          <span style="font-size: 0.8rem; color: #c084fc; font-weight: bold;">🔓 Authenticated Admin Session</span>
+          <button class="btn btn-red" style="padding: 4px 10px; font-size: 0.75rem;" onclick="logoutAdmin()">🔒 Logout Admin</button>
+        </div>
+
         <div class="wallet-card">
           <h3 style="font-size: 0.9rem; margin-bottom: 12px; color: var(--purple);">Manage Categories</h3>
           <div style="display: flex; gap: 8px; margin-bottom: 12px;">
             <input type="text" id="newCatInput" placeholder="New category name...">
             <button class="btn btn-purple" style="width: auto; white-space: nowrap;" onclick="addCategory()">+ Add Category</button>
           </div>
-          <div id="adminCategoryList" style="display: flex; flex-wrap: wrap; gap: 6px;">
-            <!-- Category pills rendered dynamically -->
-          </div>
+          <div id="adminCategoryList" style="display: flex; flex-wrap: wrap; gap: 6px;"></div>
         </div>
 
-        <!-- LISTING MANAGEMENT -->
         <div class="wallet-card">
           <h3 style="font-size: 0.9rem; margin-bottom: 12px; color: var(--purple);">Add / Edit Product Listing</h3>
           <input type="hidden" id="adminEditId" value="">
@@ -176,9 +205,7 @@
             </div>
             <div class="form-group">
               <label>Category</label>
-              <select id="adminCategorySelect">
-                <!-- Options rendered dynamically -->
-              </select>
+              <select id="adminCategorySelect"></select>
             </div>
           </div>
           <div class="form-group">
@@ -195,66 +222,70 @@
           </div>
         </div>
 
-        <!-- ACTIVE LISTINGS TABLE -->
         <div class="wallet-card">
           <h3 style="font-size: 0.9rem; margin-bottom: 12px;">Active Marketplace Listings</h3>
-          <div id="adminListingsTable">
-            <!-- Rendered dynamically -->
-          </div>
+          <div id="adminListingsTable"></div>
         </div>
       </div>
 
     </div>
   </div>
 
-  <!-- CHECKOUT & MULTI-HOP MIXER MODAL -->
+  <!-- ADMIN AUTH MODAL -->
+  <div class="modal" id="adminAuthModal">
+    <div class="modal-content" style="max-width: 360px; text-align: center;">
+      <h3 style="margin-bottom: 8px; font-size: 1.1rem; color: var(--purple);">🔒 Admin Gate</h3>
+      <p style="font-size: 0.75rem; color: var(--muted); margin-bottom: 16px;">Enter the Master PIN to unlock management tools.</p>
+      
+      <div class="form-group">
+        <input type="password" id="adminPinInput" placeholder="Enter Master PIN (Default: 1337)" style="text-align: center; letter-spacing: 4px; font-size: 1.1rem;" onkeydown="if(event.key==='Enter') authenticateAdmin()">
+      </div>
+      <p id="adminAuthError" style="color: var(--red); font-size: 0.75rem; display: none; margin-bottom: 12px;">Incorrect Passkey.</p>
+
+      <div style="display: flex; gap: 8px;">
+        <button class="btn btn-purple" style="flex: 1;" onclick="authenticateAdmin()">Authenticate</button>
+        <button class="btn btn-red" style="width: auto;" onclick="closeAdminAuthModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHECKOUT MODAL -->
   <div class="modal" id="cartModal">
     <div class="modal-content">
-      <h3 style="margin-bottom: 12px; font-size: 1rem; color: #fff;">Multi-Stage Escrow & Tumbler Checkout</h3>
+      <h3 style="margin-bottom: 12px; font-size: 1rem; color: #fff;">Marketplace Checkout</h3>
       <div id="cartItemsList" style="font-size: 0.85rem; margin-bottom: 12px; color: var(--muted); background: #0a0e17; padding: 10px; border-radius: 8px; border: 1px solid var(--border);"></div>
       
       <p style="font-size: 0.95rem; font-weight: bold; margin-bottom: 16px; color: var(--green);">Total Amount: $<span id="cartTotal">0.00</span> USD</p>
       
       <div class="form-group">
-        <label>Select Escrow Currency</label>
+        <label>Select Currency</label>
         <select id="checkoutCoin">
-          <option value="BTC">Bitcoin (BTC) - Multi-Hop Vaults</option>
-          <option value="XMR">Monero (XMR) - RingCT Mixer</option>
+          <option value="BTC">Bitcoin (BTC)</option>
+          <option value="XMR">Monero (XMR)</option>
         </select>
       </div>
 
-      <!-- MULTI-HOP TRANSACTION VISUALIZER -->
-      <div id="escrowDepositBox" style="display:none; background:#070a12; padding:12px; border-radius:8px; border:1px solid var(--border); margin-bottom:12px;">
-        <p style="font-size:0.75rem; color:var(--green); font-weight:bold; text-align:center;">Payment Broadcasted & Escrow Active</p>
-        
-        <div class="pipeline-box">
-          <p style="color:var(--muted); margin-bottom:4px;">1. INGESTION SPLIT VAULTS:</p>
-          <div id="pipeIngestion"></div>
-
-          <p style="color:var(--muted); margin-top:8px; margin-bottom:4px;">2. MANIA CENTRAL VAULT (POOL):</p>
-          <div class="hop-item" style="border-color:var(--purple);" id="pipeCentral">Central Vault: Processing...</div>
-
-          <p style="color:var(--muted); margin-top:8px; margin-bottom:4px;">3. MULTI-HOP VENDOR PAYOUT ROUTE:</p>
-          <div id="pipePayout"></div>
-        </div>
-
-        <p style="font-size:0.7rem; color:var(--muted); text-align:center;">Total Amount Processing: <strong id="escrowCryptoAmt" style="color:#fff;">0.0000 BTC</strong></p>
+      <div id="escrowDepositBox" style="display:none; background:#070a12; padding:12px; border-radius:8px; border:1px solid var(--border); margin-bottom:12px; text-align:center;">
+        <p style="font-size:0.85rem; color:var(--green); font-weight:bold;">Payment Sent</p>
+        <p style="font-size:0.75rem; color:var(--muted); margin-top:4px;">Processed: <strong id="escrowCryptoAmt" style="color:#fff;">0.0000 BTC</strong></p>
       </div>
 
       <div style="display: flex; gap: 8px;">
-        <button class="btn btn-green" id="btnPay" style="flex:1;" onclick="processPayment()">Execute Multi-Hop Payment</button>
+        <button class="btn btn-green" id="btnPay" style="flex:1;" onclick="processPayment()">Confirm & Pay</button>
         <button class="btn btn-red" style="width: auto;" onclick="closeCart()">Close</button>
       </div>
     </div>
   </div>
 
   <script>
-    // INITIAL APP STATE
     let btcBal = 0.050000;
     let xmrBal = 5.2500;
     const RATES = { BTC: 65000, XMR: 160 };
     let cart = [];
     let selectedCategory = 'all';
+
+    let isAdminAuthenticated = false;
+    const ADMIN_PIN = "1337";
 
     let categories = [
       { id: 'all', name: 'All Listings' },
@@ -270,7 +301,6 @@
       { id: 4, title: 'PGP Key Audit & Security', price: 120, category: 'services', vendor: 'CipherLab (4.9★)', vendorWallet: 'bc1qcipher7712...' }
     ];
 
-    // INITIALIZATION
     window.onload = function() {
       renderCategories();
       renderProducts();
@@ -278,9 +308,15 @@
     };
 
     function switchView(view) {
+      if (view === 'admin' && !isAdminAuthenticated) {
+        openAdminAuthModal();
+        return;
+      }
+
       document.getElementById('btnNavMarket').classList.toggle('active', view === 'market');
       document.getElementById('btnNavWallet').classList.toggle('active', view === 'wallet');
-      document.getElementById('btnNavAdmin').classList.toggle('active', view === 'admin');
+      const adminNavBtn = document.getElementById('btnNavAdmin');
+      if (adminNavBtn) adminNavBtn.classList.toggle('active', view === 'admin');
 
       document.getElementById('viewMarket').style.display = view === 'market' ? 'block' : 'none';
       document.getElementById('viewWallet').style.display = view === 'wallet' ? 'block' : 'none';
@@ -289,7 +325,42 @@
       if (view === 'admin') renderAdminView();
     }
 
-    // CATEGORY MANAGERS
+    function openAdminAuthModal() {
+      document.getElementById('adminPinInput').value = '';
+      document.getElementById('adminAuthError').style.display = 'none';
+      document.getElementById('adminAuthModal').style.display = 'flex';
+      setTimeout(() => document.getElementById('adminPinInput').focus(), 100);
+    }
+
+    function closeAdminAuthModal() {
+      document.getElementById('adminAuthModal').style.display = 'none';
+    }
+
+    function authenticateAdmin() {
+      const inputPin = document.getElementById('adminPinInput').value;
+      if (inputPin === ADMIN_PIN) {
+        isAdminAuthenticated = true;
+        closeAdminAuthModal();
+        
+        const adminBtn = document.getElementById('btnNavAdmin');
+        adminBtn.style.display = 'inline-block';
+        document.getElementById('btnAdminTrigger').innerText = '⚙️ Open Admin Panel';
+        
+        switchView('admin');
+      } else {
+        document.getElementById('adminAuthError').style.display = 'block';
+      }
+    }
+
+    function logoutAdmin() {
+      isAdminAuthenticated = false;
+      const adminBtn = document.getElementById('btnNavAdmin');
+      adminBtn.style.display = 'none';
+      document.getElementById('btnAdminTrigger').innerText = '🔑 Admin Login';
+      switchView('market');
+      alert('Logged out from Admin session.');
+    }
+
     function renderCategories() {
       const sidebar = document.getElementById('categorySidebar');
       sidebar.innerHTML = categories.map(c => `
@@ -309,6 +380,7 @@
     }
 
     function addCategory() {
+      if (!isAdminAuthenticated) return alert('Unauthorized access.');
       const input = document.getElementById('newCatInput');
       const name = input.value.trim();
       if (!name) return alert('Enter category name.');
@@ -322,6 +394,7 @@
     }
 
     function deleteCategory(id) {
+      if (!isAdminAuthenticated) return alert('Unauthorized access.');
       if (id === 'all') return alert('Cannot delete master category.');
       categories = categories.filter(c => c.id !== id);
       if (selectedCategory === id) selectedCategory = 'all';
@@ -330,7 +403,6 @@
       renderProducts();
     }
 
-    // LISTING MANAGERS
     function renderProducts() {
       const grid = document.getElementById('productGrid');
       const filtered = listings.filter(l => selectedCategory === 'all' || l.category === selectedCategory);
@@ -373,7 +445,6 @@
       }
     }
 
-    // ADMIN MANAGEMENT VIEW
     function renderAdminView() {
       const catList = document.getElementById('adminCategoryList');
       catList.innerHTML = categories.filter(c => c.id !== 'all').map(c => `
@@ -399,6 +470,7 @@
     }
 
     function saveListing() {
+      if (!isAdminAuthenticated) return alert('Unauthorized access.');
       const editId = document.getElementById('adminEditId').value;
       const title = document.getElementById('adminTitle').value.trim();
       const price = parseFloat(document.getElementById('adminPrice').value);
@@ -434,6 +506,7 @@
     }
 
     function editListing(id) {
+      if (!isAdminAuthenticated) return alert('Unauthorized access.');
       const item = listings.find(l => l.id === id);
       if (!item) return;
 
@@ -459,12 +532,12 @@
     }
 
     function deleteListing(id) {
+      if (!isAdminAuthenticated) return alert('Unauthorized access.');
       listings = listings.filter(l => l.id !== id);
       renderProducts();
       renderAdminView();
     }
 
-    // CHECKOUT & MULTI-HOP MIXER ENGINE
     function openCart() {
       if (cart.length === 0) return alert('Shopping cart is empty.');
       
@@ -493,36 +566,13 @@
       const totalUsd = cart.reduce((sum, i) => sum + i.price, 0);
       const cryptoAmt = (totalUsd / RATES[coin]).toFixed(coin === 'BTC' ? 6 : 4);
 
-      if (coin === 'BTC' && btcBal < cryptoAmt) return alert('Insufficient BTC balance! Add funds in Wallet tab.');
-      if (coin === 'XMR' && xmrBal < cryptoAmt) return alert('Insufficient XMR balance! Add funds in Wallet tab.');
+      if (coin === 'BTC' && btcBal < cryptoAmt) return alert('Insufficient BTC balance!');
+      if (coin === 'XMR' && xmrBal < cryptoAmt) return alert('Insufficient XMR balance!');
 
       if (coin === 'BTC') btcBal -= parseFloat(cryptoAmt);
       else xmrBal -= parseFloat(cryptoAmt);
 
       updateWalletUI();
-
-      // GENERATE MULTI-HOP PIPELINE
-      const chunk1 = (cryptoAmt * 0.45).toFixed(4);
-      const chunk2 = (cryptoAmt * 0.35).toFixed(4);
-      const chunk3 = (cryptoAmt * 0.20).toFixed(4);
-
-      document.getElementById('pipeIngestion').innerHTML = `
-        <div class="hop-item">Ingestion Vault A: +${chunk1} ${coin} (Conf 6/6)</div>
-        <div class="hop-item">Ingestion Vault B: +${chunk2} ${coin} (Conf 6/6)</div>
-        <div class="hop-item">Ingestion Vault C: +${chunk3} ${coin} (Conf 6/6)</div>
-      `;
-
-      document.getElementById('pipeCentral').innerText = `Mania Central Vault Pool: +${cryptoAmt} ${coin} Locked in Escrow`;
-
-      const p1 = (cryptoAmt * 0.6).toFixed(4);
-      const p2 = (cryptoAmt * 0.38).toFixed(4);
-      const fee = (cryptoAmt * 0.02).toFixed(4);
-
-      document.getElementById('pipePayout').innerHTML = `
-        <div class="hop-item">Payout Hop #1 (Mixer): ${p1} ${coin} → Vendor Wallet</div>
-        <div class="hop-item">Payout Hop #2 (Mixer): ${p2} ${coin} → Vendor Wallet</div>
-        <div class="hop-item" style="border-color:var(--muted);">Platform Fee (2%): ${fee} ${coin} → Mania Maintenance</div>
-      `;
 
       document.getElementById('escrowCryptoAmt').innerText = `${cryptoAmt} ${coin}`;
       document.getElementById('escrowDepositBox').style.display = 'block';
@@ -530,6 +580,28 @@
 
       cart = [];
       document.getElementById('cartCount').innerText = 0;
+    }
+
+    function processWithdrawal() {
+      const coin = document.getElementById('withdrawCoin').value;
+      const walletId = document.getElementById('withdrawWalletId').value.trim();
+      const amt = parseFloat(document.getElementById('withdrawAmt').value);
+
+      if (!walletId) return alert('Please enter a valid wallet address.');
+      if (isNaN(amt) || amt <= 0) return alert('Please enter a valid withdrawal amount.');
+
+      if (coin === 'BTC') {
+        if (amt > btcBal) return alert('Insufficient Bitcoin (BTC) balance.');
+        btcBal -= amt;
+      } else {
+        if (amt > xmrBal) return alert('Insufficient Monero (XMR) balance.');
+        xmrBal -= amt;
+      }
+
+      updateWalletUI();
+      document.getElementById('withdrawWalletId').value = '';
+      document.getElementById('withdrawAmt').value = '';
+      alert(`Withdrawal of ${amt} ${coin} to ${walletId} processed successfully!`);
     }
 
     function addDeposit(coin) {
