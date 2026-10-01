@@ -11,15 +11,6 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#090d16">
 
-  <link rel="manifest" href="data:application/manifest+json,{
-    %22name%22:%22Mania%20Marketplace%22,
-    %22short_name%22:%22Mania%22,
-    %22start_url%22:%22.%22,
-    %22display%22:%22standalone%22,
-    %22background_color%22:%22%23090d16%22,
-    %22theme_color%22:%22%23090d16%22
-  }">
-
   <style>
     :root {
       --bg: #090d16;
@@ -39,12 +30,18 @@
     body { background: var(--bg); color: var(--text); padding: 16px; min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
 
     .header { text-align: center; margin-bottom: 20px; width: 100%; max-width: 1000px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-    .header h1 { font-size: 1.6rem; font-weight: 900; letter-spacing: 2px; color: #fff; }
-    .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .header h1 { font-size: 1.6rem; font-weight: 900; letter-spacing: 2px; color: #fff; cursor: pointer; }
+    .header-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     
     .nav-btn { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
     .nav-btn.active { border-color: var(--blue); background: rgba(37, 99, 235, 0.2); }
     .nav-btn-admin { border-color: var(--purple); color: #c084fc; display: none; }
+    .nav-btn-vendor { border-color: var(--xmr); color: var(--xmr); display: none; }
+
+    .user-badge { font-size: 0.75rem; background: #0a0e17; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+    .badge-tag { padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; }
+    .tag-buyer { background: rgba(37, 99, 235, 0.2); color: var(--blue); border: 1px solid var(--blue); }
+    .tag-vendor { background: rgba(255, 102, 0, 0.2); color: var(--xmr); border: 1px solid var(--xmr); }
 
     .main-layout { display: grid; grid-template-columns: 240px 1fr; gap: 16px; width: 100%; max-width: 1000px; }
     @media (max-width: 768px) { .main-layout { grid-template-columns: 1fr; } }
@@ -67,7 +64,7 @@
     .product-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
     .price-tag { font-size: 0.85rem; font-weight: 800; color: var(--green); }
 
-    .btn { background: var(--blue); color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.75rem; }
+    .btn { background: var(--blue); color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.75rem; text-align: center; }
     .btn:hover { background: #1d4ed8; }
     .btn-green { background: var(--green); }
     .btn-green:hover { background: #059669; }
@@ -75,6 +72,8 @@
     .btn-red:hover { background: #dc2626; }
     .btn-purple { background: var(--purple); }
     .btn-purple:hover { background: #7c3aed; }
+    .btn-xmr { background: var(--xmr); }
+    .btn-xmr:hover { background: #e05500; }
 
     .wallet-card { background: #070a12; border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 14px; text-align: left; }
     .wallet-val { font-size: 1.3rem; font-weight: 900; color: #fff; margin: 4px 0; }
@@ -84,6 +83,11 @@
     label { display: block; font-size: 0.7rem; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; font-weight: 700; }
     input, select, textarea { width: 100%; background: #0a0e17; border: 1px solid var(--border); border-radius: 8px; padding: 10px; color: var(--text); font-size: 0.85rem; outline: none; }
 
+    .auth-container { max-width: 450px; margin: 20px auto; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+    .auth-tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+    .auth-tab-btn { flex: 1; padding: 8px; background: transparent; border: none; color: var(--muted); font-weight: bold; cursor: pointer; border-radius: 6px; font-size: 0.85rem; }
+    .auth-tab-btn.active { background: rgba(37, 99, 235, 0.2); color: var(--blue); }
+
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; padding: 16px; z-index: 100; overflow-y: auto; }
     .modal-content { background: var(--card); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 500px; padding: 20px; text-align: left; }
   </style>
@@ -91,12 +95,16 @@
 <body>
 
   <div class="header">
-    <h1>MANIA MARKET</h1>
+    <h1 onclick="switchView('market')">MANIA MARKET</h1>
     <div class="header-actions">
       <button id="btnNavMarket" class="nav-btn active" onclick="switchView('market')">🛒 Market</button>
       <button id="btnNavWallet" class="nav-btn" onclick="switchView('wallet')">💳 Wallet</button>
-      <button id="btnNavAdmin" class="nav-btn nav-btn-admin" style="display: none;" onclick="switchView('admin')">⚙️ Admin</button>
+      <button id="btnNavVendor" class="nav-btn nav-btn-vendor" onclick="switchView('vendorPanel')">🏪 Vendor Hub</button>
+      <button id="btnNavAdmin" class="nav-btn nav-btn-admin" onclick="switchView('admin')">⚙️ Admin</button>
       <button class="nav-btn" style="border-color: var(--green);" onclick="openCart()">🛍️ Cart (<span id="cartCount">0</span>)</button>
+      
+      <!-- User / Auth Header State -->
+      <div id="userHeaderBox"></div>
     </div>
   </div>
 
@@ -121,6 +129,117 @@
       <div id="viewMarket">
         <input type="text" class="search-bar" id="searchInput" onkeyup="filterProducts()" placeholder="Search product listings, categories, or vendor names...">
         <div class="product-grid" id="productGrid"></div>
+      </div>
+
+      <!-- AUTH / LOGIN / SIGNUP VIEW -->
+      <div id="viewAuth" style="display: none;">
+        <div class="auth-container">
+          <div class="auth-tabs">
+            <button class="auth-tab-btn active" id="tabBtnLogin" onclick="switchAuthSubTab('login')">🔑 Login</button>
+            <button class="auth-tab-btn" id="tabBtnBuyer" onclick="switchAuthSubTab('buyer')">👤 Buyer Sign Up</button>
+            <button class="auth-tab-btn" id="tabBtnVendor" onclick="switchAuthSubTab('vendor')">🏪 Join as Vendor</button>
+          </div>
+
+          <!-- LOGIN SUB-TAB -->
+          <div id="subTabLogin">
+            <h3 style="font-size:1.1rem; margin-bottom:12px; color:#fff;">Account Login</h3>
+            <div class="form-group">
+              <label>Role / Portal</label>
+              <select id="loginRole">
+                <option value="buyer">Buyer Portal</option>
+                <option value="vendor">Vendor Portal</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Username</label>
+              <input type="text" id="loginUsername" placeholder="Enter your username">
+            </div>
+            <div class="form-group">
+              <label>Password</label>
+              <input type="password" id="loginPassword" placeholder="Enter your password">
+            </div>
+            <button class="btn btn-green" style="width:100%; padding:10px;" onclick="handleLogin()">Login to Portal</button>
+          </div>
+
+          <!-- BUYER SIGNUP SUB-TAB -->
+          <div id="subTabBuyer" style="display: none;">
+            <h3 style="font-size:1.1rem; margin-bottom:4px; color:var(--blue);">Create Buyer Account</h3>
+            <p style="font-size:0.75rem; color:var(--muted); margin-bottom:12px;">Start browsing & purchasing using platform balance & escrow.</p>
+            <div class="form-group">
+              <label>Desired Username</label>
+              <input type="text" id="buyerRegUser" placeholder="Choose a username">
+            </div>
+            <div class="form-group">
+              <label>Password</label>
+              <input type="password" id="buyerRegPass" placeholder="Set password">
+            </div>
+            <button class="btn" style="width:100%; padding:10px;" onclick="handleBuyerRegister()">Register Buyer Account</button>
+          </div>
+
+          <!-- VENDOR JOIN SUB-TAB -->
+          <div id="subTabVendor" style="display: none;">
+            <h3 style="font-size:1.1rem; margin-bottom:4px; color:var(--xmr);">Vendor Application / Onboarding</h3>
+            <p style="font-size:0.75rem; color:var(--muted); margin-bottom:12px;">Open a storefront and publish encrypted digital listings. Payouts are handled via platform admin.</p>
+            <div class="form-group">
+              <label>Vendor Brand / Store Name</label>
+              <input type="text" id="vendorRegUser" placeholder="e.g. StealthNodes">
+            </div>
+            <div class="form-group">
+              <label>Password</label>
+              <input type="password" id="vendorRegPass" placeholder="Set password">
+            </div>
+            <div class="form-group">
+              <label>Your Payout Wallet Address (BTC or XMR)</label>
+              <input type="text" id="vendorRegWallet" placeholder="Target BTC or XMR payout address">
+            </div>
+            <button class="btn btn-xmr" style="width:100%; padding:10px;" onclick="handleVendorRegister()">Register Vendor Storefront</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- VENDOR HUB VIEW -->
+      <div id="viewVendorPanel" style="display: none;">
+        <div class="wallet-card" style="border-color: var(--xmr);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h3 style="font-size: 0.95rem; color: var(--xmr);">🏪 Vendor Storefront Portal</h3>
+            <span style="font-size:0.75rem; color:var(--muted);">Vendor: <strong id="vendorStoreName" style="color:#fff;">-</strong></span>
+          </div>
+
+          <!-- Vendor Earnings & Payout Request -->
+          <div class="wallet-card" style="background:#0a0e17; margin-bottom:12px; border-color:var(--border);">
+            <h4 style="font-size:0.85rem; color:#fff; margin-bottom:8px;">Store Earnings & Payout</h4>
+            <p style="font-size:0.75rem; color:var(--muted); margin-bottom:6px;">Available Unpaid Balance: <strong id="vendorUnpaidBal" style="color:var(--green);">$0.00 USD</strong></p>
+            <p style="font-size:0.75rem; color:var(--muted); margin-bottom:12px;">Registered Payout Wallet: <code id="vendorSavedWallet" style="color:#fff;">-</code></p>
+            <div class="form-group">
+              <label>Request Withdrawal Amount (USD)</label>
+              <input type="number" id="vendorRequestAmt" placeholder="50.00">
+            </div>
+            <button class="btn btn-xmr" style="width:100%; padding:10px;" onclick="requestVendorPayout()">Request Payout from Mania Market</button>
+          </div>
+
+          <!-- Vendor Publish Listing -->
+          <div class="wallet-card" style="background:#0a0e17; margin-bottom:12px;">
+            <h4 style="font-size:0.85rem; color:#fff; margin-bottom:8px;">Post New Store Listing</h4>
+            <div class="form-group">
+              <label>Listing Title</label>
+              <input type="text" id="vPostTitle" placeholder="e.g. High-Speed Encrypted Proxy">
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <div class="form-group">
+                <label>Price (USD)</label>
+                <input type="number" id="vPostPrice" placeholder="50.00">
+              </div>
+              <div class="form-group">
+                <label>Category</label>
+                <select id="vPostCategory"></select>
+              </div>
+            </div>
+            <button class="btn btn-xmr" style="width:100%; padding:10px;" onclick="vendorPublishListing()">Publish Product Listing</button>
+          </div>
+
+          <h4 style="font-size:0.85rem; color:#fff; margin-bottom:8px;">Your Published Listings</h4>
+          <div id="vendorMyListingsTable"></div>
+        </div>
       </div>
 
       <!-- WALLET VIEW -->
@@ -180,6 +299,54 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; background: rgba(139, 92, 246, 0.1); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--purple);">
           <span style="font-size: 0.8rem; color: #c084fc; font-weight: bold;">🔓 Authenticated Admin Session</span>
           <button class="btn btn-red" style="padding: 4px 10px; font-size: 0.75rem;" onclick="logoutAdmin()">🔒 Logout Admin</button>
+        </div>
+
+        <!-- CENTRAL ESCROW & FUND SWEEPING -->
+        <div class="wallet-card" style="border-color: var(--purple);">
+          <h3 style="font-size: 0.9rem; margin-bottom: 8px; color: var(--purple);">🏛️ Central Platform Vault & Fund Sweeping</h3>
+          <p style="font-size: 0.75rem; color: var(--muted); margin-bottom: 12px;">Mania Market holds active buyer escrow payments here prior to order completion.</p>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+            <div style="background:#0a0e17; padding:10px; border-radius:8px; border:1px solid var(--border);">
+              <span style="font-size:0.7rem; color:var(--muted);">Total Escrow Held:</span>
+              <div style="font-size:1.1rem; font-weight:bold; color:var(--green);" id="adminEscrowVaultUsd">$0.00 USD</div>
+            </div>
+            <div style="background:#0a0e17; padding:10px; border-radius:8px; border:1px solid var(--border);">
+              <span style="font-size:0.7rem; color:var(--muted);">Platform Revenue / Fees:</span>
+              <div style="font-size:1.1rem; font-weight:bold; color:var(--btc);" id="adminRevenueUsd">$0.00 USD</div>
+            </div>
+          </div>
+
+          <div style="background:#0a0e17; padding:12px; border-radius:8px; border:1px solid var(--border);">
+            <h4 style="font-size:0.8rem; color:#fff; margin-bottom:8px;">Move Central Funds to External Wallet</h4>
+            <div class="form-group">
+              <label>Target Currency / Asset</label>
+              <select id="sweepCoin">
+                <option value="BTC">Bitcoin (BTC)</option>
+                <option value="XMR">Monero (XMR)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Destination External Wallet Address</label>
+              <input type="text" id="sweepDestinationAddr" placeholder="Enter secure cold storage wallet address">
+            </div>
+            <div class="form-group">
+              <label>Amount to Move (USD)</label>
+              <input type="number" id="sweepUsdAmt" placeholder="0.00">
+            </div>
+            <button class="btn btn-purple" style="width:100%; padding:10px;" onclick="executeCentralFundSweep()">Execute Fund Sweep</button>
+          </div>
+        </div>
+
+        <!-- VENDOR PAYOUT REQUESTS QUEUE -->
+        <div class="wallet-card">
+          <h3 style="font-size: 0.9rem; margin-bottom: 12px; color: var(--purple);">Pending Vendor Payout Requests</h3>
+          <div id="adminVendorPayoutsTable"></div>
+        </div>
+
+        <!-- ACTIVE ESCROW ORDERS -->
+        <div class="wallet-card">
+          <h3 style="font-size: 0.9rem; margin-bottom: 12px; color: var(--purple);">Active Buyer Orders & Escrow</h3>
+          <div id="adminEscrowOrdersTable"></div>
         </div>
 
         <div class="wallet-card">
@@ -252,26 +419,21 @@
   <!-- CHECKOUT MODAL -->
   <div class="modal" id="cartModal">
     <div class="modal-content">
-      <h3 style="margin-bottom: 12px; font-size: 1rem; color: #fff;">Marketplace Checkout</h3>
+      <h3 style="margin-bottom: 12px; font-size: 1rem; color: #fff;">Marketplace Checkout (Platform Escrow)</h3>
       <div id="cartItemsList" style="font-size: 0.85rem; margin-bottom: 12px; color: var(--muted); background: #0a0e17; padding: 10px; border-radius: 8px; border: 1px solid var(--border);"></div>
       
-      <p style="font-size: 0.95rem; font-weight: bold; margin-bottom: 16px; color: var(--green);">Total Amount: $<span id="cartTotal">0.00</span> USD</p>
+      <p style="font-size: 0.95rem; font-weight: bold; margin-bottom: 16px; color: var(--green);">Total Escrow Amount: $<span id="cartTotal">0.00</span> USD</p>
       
       <div class="form-group">
-        <label>Select Currency</label>
+        <label>Payment Method</label>
         <select id="checkoutCoin">
-          <option value="BTC">Bitcoin (BTC)</option>
-          <option value="XMR">Monero (XMR)</option>
+          <option value="BTC">Pay with Bitcoin (BTC Wallet Balance)</option>
+          <option value="XMR">Pay with Monero (XMR Wallet Balance)</option>
         </select>
       </div>
 
-      <div id="escrowDepositBox" style="display:none; background:#070a12; padding:12px; border-radius:8px; border:1px solid var(--border); margin-bottom:12px; text-align:center;">
-        <p style="font-size:0.85rem; color:var(--green); font-weight:bold;">Payment Sent</p>
-        <p style="font-size:0.75rem; color:var(--muted); margin-top:4px;">Processed: <strong id="escrowCryptoAmt" style="color:#fff;">0.0000 BTC</strong></p>
-      </div>
-
       <div style="display: flex; gap: 8px;">
-        <button class="btn btn-green" id="btnPay" style="flex:1;" onclick="processPayment()">Confirm & Pay</button>
+        <button class="btn btn-green" id="btnPay" style="flex:1;" onclick="processPayment()">Confirm Escrow Payment</button>
         <button class="btn btn-red" style="width: auto;" onclick="closeCart()">Close</button>
       </div>
     </div>
@@ -287,6 +449,20 @@
     let isAdminAuthenticated = false;
     const ADMIN_PIN = "1337";
 
+    // Central Platform Vault & Escrow Data Structures
+    let centralEscrowVaultUsd = 0;
+    let platformRevenueUsd = 0;
+    let escrowOrders = []; // { id, items, totalUsd, buyer, status: 'held' | 'released' }
+    let vendorEarnings = {}; // { vendorName: unpaidUsd }
+    let vendorPayoutRequests = []; // { id, vendor, amountUsd, wallet, status: 'pending' }
+
+    // User Session State
+    let currentUser = null; 
+    let registeredUsers = [
+      { username: 'buyer1', password: 'password', role: 'buyer' },
+      { username: 'CryptoSafe', password: 'password', role: 'vendor', wallet: 'bc1qvendor4492x...' }
+    ];
+
     let categories = [
       { id: 'all', name: 'All Listings' },
       { id: 'hardware', name: 'Hardware & Keys' },
@@ -295,16 +471,17 @@
     ];
 
     let listings = [
-      { id: 1, title: 'Encrypted USB Key', price: 45, category: 'hardware', vendor: 'CryptoSafe (4.9★)', vendorWallet: 'bc1qvendor4492x...' },
-      { id: 2, title: '1-Year Dedicated VPN', price: 80, category: 'software', vendor: 'NodeMaster (5.0★)', vendorWallet: '888t85p2p8Vendor...' },
-      { id: 3, title: 'Metal Seed Phrase Plate', price: 30, category: 'hardware', vendor: 'SteelVault (4.8★)', vendorWallet: 'bc1qsteel9823x...' },
-      { id: 4, title: 'PGP Key Audit & Security', price: 120, category: 'services', vendor: 'CipherLab (4.9★)', vendorWallet: 'bc1qcipher7712...' }
+      { id: 1, title: 'Encrypted USB Key', price: 45, category: 'hardware', vendor: 'CryptoSafe', vendorWallet: 'bc1qvendor4492x...' },
+      { id: 2, title: '1-Year Dedicated VPN', price: 80, category: 'software', vendor: 'NodeMaster', vendorWallet: '888t85p2p8Vendor...' },
+      { id: 3, title: 'Metal Seed Phrase Plate', price: 30, category: 'hardware', vendor: 'SteelVault', vendorWallet: 'bc1qsteel9823x...' },
+      { id: 4, title: 'PGP Key Audit & Security', price: 120, category: 'services', vendor: 'CipherLab', vendorWallet: 'bc1qcipher7712...' }
     ];
 
     window.onload = function() {
       renderCategories();
       renderProducts();
       updateWalletUI();
+      updateUserHeader();
     };
 
     function switchView(view) {
@@ -315,16 +492,221 @@
 
       document.getElementById('btnNavMarket').classList.toggle('active', view === 'market');
       document.getElementById('btnNavWallet').classList.toggle('active', view === 'wallet');
+      
+      const vendorNavBtn = document.getElementById('btnNavVendor');
+      if (vendorNavBtn) vendorNavBtn.classList.toggle('active', view === 'vendorPanel');
+
       const adminNavBtn = document.getElementById('btnNavAdmin');
       if (adminNavBtn) adminNavBtn.classList.toggle('active', view === 'admin');
 
       document.getElementById('viewMarket').style.display = view === 'market' ? 'block' : 'none';
       document.getElementById('viewWallet').style.display = view === 'wallet' ? 'block' : 'none';
+      document.getElementById('viewAuth').style.display = view === 'auth' ? 'block' : 'none';
+      document.getElementById('viewVendorPanel').style.display = view === 'vendorPanel' ? 'block' : 'none';
       document.getElementById('viewAdmin').style.display = view === 'admin' ? 'block' : 'none';
 
       if (view === 'admin') renderAdminView();
+      if (view === 'vendorPanel') renderVendorPanel();
     }
 
+    /* AUTHENTICATION & PORTAL FUNCTIONS */
+    function switchAuthSubTab(tab) {
+      document.getElementById('tabBtnLogin').classList.toggle('active', tab === 'login');
+      document.getElementById('tabBtnBuyer').classList.toggle('active', tab === 'buyer');
+      document.getElementById('tabBtnVendor').classList.toggle('active', tab === 'vendor');
+
+      document.getElementById('subTabLogin').style.display = tab === 'login' ? 'block' : 'none';
+      document.getElementById('subTabBuyer').style.display = tab === 'buyer' ? 'block' : 'none';
+      document.getElementById('subTabVendor').style.display = tab === 'vendor' ? 'block' : 'none';
+    }
+
+    function updateUserHeader() {
+      const box = document.getElementById('userHeaderBox');
+      const vendorNavBtn = document.getElementById('btnNavVendor');
+
+      if (currentUser) {
+        box.innerHTML = `
+          <div class="user-badge">
+            <span>👤 <strong>${currentUser.username}</strong></span>
+            <span class="badge-tag tag-${currentUser.role}">${currentUser.role}</span>
+            <button class="btn btn-red" style="padding:2px 6px; font-size:0.65rem;" onclick="logoutUser()">Logout</button>
+          </div>
+        `;
+        if (currentUser.role === 'vendor') {
+          vendorNavBtn.style.display = 'inline-block';
+        } else {
+          vendorNavBtn.style.display = 'none';
+        }
+      } else {
+        box.innerHTML = `
+          <button class="nav-btn" style="border-color:var(--blue); color:var(--blue);" onclick="switchView('auth')">🔑 Login / Register</button>
+        `;
+        vendorNavBtn.style.display = 'none';
+      }
+    }
+
+    function handleLogin() {
+      const role = document.getElementById('loginRole').value;
+      const user = document.getElementById('loginUsername').value.trim();
+      const pass = document.getElementById('loginPassword').value.trim();
+
+      if (!user || !pass) return alert('Please enter both username and password.');
+
+      const found = registeredUsers.find(u => u.username.toLowerCase() === user.toLowerCase() && u.password === pass && u.role === role);
+      if (found) {
+        currentUser = found;
+        updateUserHeader();
+        document.getElementById('loginUsername').value = '';
+        document.getElementById('loginPassword').value = '';
+        alert(`Welcome back, ${currentUser.username}!`);
+        switchView(role === 'vendor' ? 'vendorPanel' : 'market');
+      } else {
+        alert('Invalid credentials or account role mismatch.');
+      }
+    }
+
+    function handleBuyerRegister() {
+      const user = document.getElementById('buyerRegUser').value.trim();
+      const pass = document.getElementById('buyerRegPass').value.trim();
+
+      if (!user || !pass) return alert('Please enter a username and password.');
+      if (registeredUsers.some(u => u.username.toLowerCase() === user.toLowerCase())) {
+        return alert('Username already exists. Please pick another.');
+      }
+
+      const newUser = { username: user, password: pass, role: 'buyer' };
+      registeredUsers.push(newUser);
+      currentUser = newUser;
+      
+      document.getElementById('buyerRegUser').value = '';
+      document.getElementById('buyerRegPass').value = '';
+      
+      updateUserHeader();
+      alert(`Buyer account "${user}" created successfully!`);
+      switchView('market');
+    }
+
+    function handleVendorRegister() {
+      const user = document.getElementById('vendorRegUser').value.trim();
+      const pass = document.getElementById('vendorRegPass').value.trim();
+      const wallet = document.getElementById('vendorRegWallet').value.trim();
+
+      if (!user || !pass) return alert('Please enter vendor store name and password.');
+      if (registeredUsers.some(u => u.username.toLowerCase() === user.toLowerCase())) {
+        return alert('Vendor name already exists.');
+      }
+
+      const newVendor = {
+        username: user,
+        password: pass,
+        role: 'vendor',
+        wallet: wallet || 'bc1qvendordefaultpayout'
+      };
+
+      registeredUsers.push(newVendor);
+      currentUser = newVendor;
+
+      document.getElementById('vendorRegUser').value = '';
+      document.getElementById('vendorRegPass').value = '';
+      document.getElementById('vendorRegWallet').value = '';
+
+      updateUserHeader();
+      alert(`Vendor storefront "${user}" created successfully! You can now manage your listings and request payouts.`);
+      switchView('vendorPanel');
+    }
+
+    function logoutUser() {
+      currentUser = null;
+      updateUserHeader();
+      switchView('market');
+      alert('Logged out from account.');
+    }
+
+    /* VENDOR HUB & PAYOUT REQUESTS */
+    function renderVendorPanel() {
+      if (!currentUser || currentUser.role !== 'vendor') {
+        alert('Access restricted to vendors.');
+        switchView('market');
+        return;
+      }
+
+      document.getElementById('vendorStoreName').innerText = currentUser.username;
+      document.getElementById('vendorSavedWallet').innerText = currentUser.wallet || 'Not Set';
+      
+      const unpaid = vendorEarnings[currentUser.username] || 0;
+      document.getElementById('vendorUnpaidBal').innerText = `$${unpaid.toFixed(2)} USD`;
+
+      const select = document.getElementById('vPostCategory');
+      select.innerHTML = categories.filter(c => c.id !== 'all').map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+
+      const table = document.getElementById('vendorMyListingsTable');
+      const myListings = listings.filter(l => l.vendor === currentUser.username);
+
+      if (myListings.length === 0) {
+        table.innerHTML = `<p style="font-size:0.8rem; color:var(--muted);">No active listings published yet.</p>`;
+        return;
+      }
+
+      table.innerHTML = myListings.map(l => `
+        <div style="background:#0a0e17; border:1px solid var(--border); padding:8px 10px; border-radius:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; font-size:0.8rem;">
+          <div>
+            <strong>${l.title}</strong> - <span style="color:var(--green);">$${l.price.toFixed(2)}</span>
+            <div style="font-size:0.65rem; color:var(--muted);">Category: ${l.category}</div>
+          </div>
+          <button class="btn btn-red" style="padding:4px 8px; font-size:0.7rem;" onclick="deleteListing(${l.id})">Remove Listing</button>
+        </div>
+      `).join('');
+    }
+
+    function requestVendorPayout() {
+      if (!currentUser || currentUser.role !== 'vendor') return;
+      const amt = parseFloat(document.getElementById('vendorRequestAmt').value);
+      const unpaid = vendorEarnings[currentUser.username] || 0;
+
+      if (isNaN(amt) || amt <= 0) return alert('Please enter a valid payout amount.');
+      if (amt > unpaid) return alert('Requested amount exceeds your available unpaid earnings.');
+      if (!currentUser.wallet) return alert('Please update your payout wallet address.');
+
+      vendorPayoutRequests.push({
+        id: Date.now(),
+        vendor: currentUser.username,
+        amountUsd: amt,
+        wallet: currentUser.wallet,
+        status: 'pending'
+      });
+
+      document.getElementById('vendorRequestAmt').value = '';
+      alert('Payout request submitted to Mania Market admin successfully!');
+      renderVendorPanel();
+    }
+
+    function vendorPublishListing() {
+      if (!currentUser || currentUser.role !== 'vendor') return alert('Unauthorized.');
+      
+      const title = document.getElementById('vPostTitle').value.trim();
+      const price = parseFloat(document.getElementById('vPostPrice').value);
+      const category = document.getElementById('vPostCategory').value;
+
+      if (!title || isNaN(price) || price <= 0) return alert('Please enter valid product title and price.');
+
+      listings.push({
+        id: Date.now(),
+        title,
+        price,
+        category,
+        vendor: currentUser.username,
+        vendorWallet: currentUser.wallet || 'bc1qvendorwallet'
+      });
+
+      document.getElementById('vPostTitle').value = '';
+      document.getElementById('vPostPrice').value = '';
+
+      renderProducts();
+      renderVendorPanel();
+      alert(`Listing "${title}" published live to the marketplace!`);
+    }
+
+    /* ADMIN FUNCTIONS */
     function openAdminAuthModal() {
       document.getElementById('adminPinInput').value = '';
       document.getElementById('adminAuthError').style.display = 'none';
@@ -446,6 +828,43 @@
     }
 
     function renderAdminView() {
+      document.getElementById('adminEscrowVaultUsd').innerText = `$${centralEscrowVaultUsd.toFixed(2)} USD`;
+      document.getElementById('adminRevenueUsd').innerText = `$${platformRevenueUsd.toFixed(2)} USD`;
+
+      // Render Admin Vendor Payouts Queue
+      const payoutTable = document.getElementById('adminVendorPayoutsTable');
+      const pendingPayouts = vendorPayoutRequests.filter(p => p.status === 'pending');
+      if (pendingPayouts.length === 0) {
+        payoutTable.innerHTML = `<p style="font-size:0.8rem; color:var(--muted);">No pending vendor payout requests.</p>`;
+      } else {
+        payoutTable.innerHTML = pendingPayouts.map(p => `
+          <div style="background:#0a0e17; border:1px solid var(--border); padding:8px 10px; border-radius:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; font-size:0.8rem;">
+            <div>
+              <strong>Vendor: ${p.vendor}</strong> requests <span style="color:var(--green);">$${p.amountUsd.toFixed(2)}</span>
+              <div style="font-size:0.65rem; color:var(--muted); font-family:monospace;">Wallet: ${p.wallet}</div>
+            </div>
+            <button class="btn btn-green" style="padding:4px 8px; font-size:0.7rem;" onclick="processAdminPayout(${p.id})">Process Payout</button>
+          </div>
+        `).join('');
+      }
+
+      // Render Active Escrow Orders
+      const escrowTable = document.getElementById('adminEscrowOrdersTable');
+      const activeEscrows = escrowOrders.filter(o => o.status === 'held');
+      if (activeEscrows.length === 0) {
+        escrowTable.innerHTML = `<p style="font-size:0.8rem; color:var(--muted);">No active escrow orders held.</p>`;
+      } else {
+        escrowTable.innerHTML = activeEscrows.map(o => `
+          <div style="background:#0a0e17; border:1px solid var(--border); padding:8px 10px; border-radius:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; font-size:0.8rem;">
+            <div>
+              <strong>Order #${o.id}</strong> (${o.buyer}) - <span style="color:var(--green);">$${o.totalUsd.toFixed(2)}</span>
+              <div style="font-size:0.65rem; color:var(--muted);">Items: ${o.items.map(i => i.title).join(', ')}</div>
+            </div>
+            <button class="btn btn-purple" style="padding:4px 8px; font-size:0.7rem;" onclick="releaseEscrow(${o.id})">Release Escrow</button>
+          </div>
+        `).join('');
+      }
+
       const catList = document.getElementById('adminCategoryList');
       catList.innerHTML = categories.filter(c => c.id !== 'all').map(c => `
         <span style="background:#0a0e17; border:1px solid var(--border); padding:4px 8px; border-radius:6px; font-size:0.75rem; display:inline-flex; align-items:center; gap:6px;">
@@ -467,6 +886,65 @@
           </div>
         </div>
       `).join('');
+    }
+
+    function executeCentralFundSweep() {
+      if (!isAdminAuthenticated) return alert('Unauthorized.');
+      const coin = document.getElementById('sweepCoin').value;
+      const destAddr = document.getElementById('sweepDestinationAddr').value.trim();
+      const usdAmt = parseFloat(document.getElementById('sweepUsdAmt').value);
+
+      if (!destAddr) return alert('Please enter a destination external wallet address.');
+      if (isNaN(usdAmt) || usdAmt <= 0) return alert('Please enter a valid amount to sweep.');
+      if (usdAmt > centralEscrowVaultUsd) return alert('Sweep amount exceeds current central escrow vault balance.');
+
+      centralEscrowVaultUsd -= usdAmt;
+      const cryptoAmount = (usdAmt / RATES[coin]).toFixed(coin === 'BTC' ? 6 : 4);
+
+      document.getElementById('sweepDestinationAddr').value = '';
+      document.getElementById('sweepUsdAmt').value = '';
+
+      renderAdminView();
+      alert(`Successfully swept ${cryptoAmount} ${coin} ($${usdAmt.toFixed(2)} USD) from central vault to external wallet:\n${destAddr}`);
+    }
+
+    function processAdminPayout(reqId) {
+      if (!isAdminAuthenticated) return;
+      const req = vendorPayoutRequests.find(r => r.id === reqId);
+      if (!req) return;
+
+      if (req.amountUsd > centralEscrowVaultUsd) {
+        return alert('Insufficient central escrow funds to fulfill this vendor payout.');
+      }
+
+      centralEscrowVaultUsd -= req.amountUsd;
+      vendorEarnings[req.vendor] = Math.max(0, (vendorEarnings[req.vendor] || 0) - req.amountUsd);
+      req.status = 'paid';
+
+      renderAdminView();
+      alert(`Vendor payout of $${req.amountUsd.toFixed(2)} to ${req.vendor} (${req.wallet}) executed successfully!`);
+    }
+
+    function releaseEscrow(orderId) {
+      if (!isAdminAuthenticated) return;
+      const order = escrowOrders.find(o => o.id === orderId);
+      if (!order || order.status !== 'held') return;
+
+      order.status = 'released';
+      
+      // Calculate 5% platform fee, 95% to vendor earnings
+      const fee = order.totalUsd * 0.05;
+      const vendorShare = order.totalUsd * 0.95;
+      platformRevenueUsd += fee;
+
+      // Attribute earnings to each vendor in the order
+      order.items.forEach(item => {
+        const itemVendorShare = item.price * 0.95;
+        vendorEarnings[item.vendor] = (vendorEarnings[item.vendor] || 0) + itemVendorShare;
+      });
+
+      renderAdminView();
+      alert(`Order #${orderId} escrow released. Vendor earnings credited.`);
     }
 
     function saveListing() {
@@ -532,10 +1010,13 @@
     }
 
     function deleteListing(id) {
-      if (!isAdminAuthenticated) return alert('Unauthorized access.');
+      if (!isAdminAuthenticated && (!currentUser || currentUser.role !== 'vendor')) {
+        return alert('Unauthorized access.');
+      }
       listings = listings.filter(l => l.id !== id);
       renderProducts();
-      renderAdminView();
+      if (isAdminAuthenticated) renderAdminView();
+      if (currentUser && currentUser.role === 'vendor') renderVendorPanel();
     }
 
     function openCart() {
@@ -552,7 +1033,6 @@
       const total = cart.reduce((sum, i) => sum + i.price, 0);
       document.getElementById('cartTotal').innerText = total.toFixed(2);
       
-      document.getElementById('escrowDepositBox').style.display = 'none';
       document.getElementById('btnPay').style.display = 'block';
       document.getElementById('cartModal').style.display = 'flex';
     }
@@ -569,17 +1049,27 @@
       if (coin === 'BTC' && btcBal < cryptoAmt) return alert('Insufficient BTC balance!');
       if (coin === 'XMR' && xmrBal < cryptoAmt) return alert('Insufficient XMR balance!');
 
+      // Deduct from buyer wallet balance
       if (coin === 'BTC') btcBal -= parseFloat(cryptoAmt);
       else xmrBal -= parseFloat(cryptoAmt);
 
       updateWalletUI();
 
-      document.getElementById('escrowCryptoAmt').innerText = `${cryptoAmt} ${coin}`;
-      document.getElementById('escrowDepositBox').style.display = 'block';
-      document.getElementById('btnPay').style.display = 'none';
+      // Funds enter Mania Market Central Escrow Vault
+      centralEscrowVaultUsd += totalUsd;
+      escrowOrders.push({
+        id: Date.now(),
+        items: [...cart],
+        totalUsd: totalUsd,
+        buyer: currentUser ? currentUser.username : 'Anonymous Buyer',
+        status: 'held'
+      });
 
+      alert(`Payment of ${cryptoAmt} ${coin} ($${totalUsd.toFixed(2)} USD) sent successfully to Mania Market Escrow! Funds are safely held until order fulfillment.`);
+      
       cart = [];
       document.getElementById('cartCount').innerText = 0;
+      closeCart();
     }
 
     function processWithdrawal() {
